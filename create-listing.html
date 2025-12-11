@@ -295,6 +295,102 @@
     // redirige vers une page de détails sur l’offre de troc
     window.open('offre-troc.html','_blank');
   });
+
+      // GESTION DE LA CRÉATION D'ANNONCE
+    // Configuration de l'API Xano
+    const XANO_BASE_URL = 'https://x8ki-letl-twmt.n7.xano.io/api:NPLDqbSI';  // Remplacer par votre URL
+    const LISTING_ENDPOINT = '/listing';
+
+    // Fonction pour créer une annonce
+    async function createListing(listingData) {
+        try {
+            const response = await fetch(XANO_BASE_URL + LISTING_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(listingData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de la création de l'annonce:', error);
+            throw error;
+        }
+    }
+
+    // Gestionnaire de soumission du formulaire
+    const submitButton = document.querySelector('button[type="submit"]');
+    if (submitButton && submitButton.textContent.includes('Publier')) {
+        submitButton.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            // Récupération des valeurs du formulaire
+            const title = document.getElementById('title')?.value;
+            const description = document.getElementById('description')?.value;
+            const vehicleType = document.getElementById('vehicleType')?.value;
+            const location = document.getElementById('location')?.value;
+
+            // Validation basique
+            if (!title || !description || !vehicleType || vehicleType === 'Sélectionnez...' || !location) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            // Géocodage de la localisation (simulation pour l'instant)
+            // TODO: Intégrer une API de géocodage (Google Maps, OpenStreetMap, etc.)
+            const latitude = 48.8566;  // Paris par défaut
+            const longitude = 2.3522;
+            const radius_km = 50;  // Rayon par défaut de 50km
+
+            // Préparation des données pour Xano
+            const listingData = {
+                user_id: 1,  // TODO: Remplacer par l'ID de l'utilisateur connecté
+                type: vehicleType,
+                category: 'location',  // Catégorie par défaut
+                title: title,
+                description: description,
+                latitude: latitude,
+                longitude: longitude,
+                radius_km: radius_km,
+                is_active: true
+            };
+
+            try {
+                // Afficher un message de chargement
+                submitButton.disabled = true;
+                submitButton.textContent = '⏳ Publication en cours...';
+
+                // Créer l'annonce
+                const result = await createListing(listingData);
+                console.log('Annonce créée avec succès:', result);
+
+                // Afficher un message de succès
+                alert('✅ Votre annonce a été publiée avec succès!');
+
+                // Rediriger vers la carte ou réinitialiser le formulaire
+                // window.location.href = '/vantroc-map/index.html';
+                
+                // Ou réinitialiser le formulaire
+                document.getElementById('title').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('vehicleType').value = 'Sélectionnez...';
+                document.getElementById('location').value = '';
+
+            } catch (error) {
+                alert('❌ Erreur lors de la publication de l\'annonce. Veuillez réessayer.');
+            } finally {
+                // Réactiver le bouton
+                submitButton.disabled = false;
+                submitButton.textContent = '🚀 Publier l\'annonce';
+            }
+        });
+    }
 </script>
 </body>
 </html>
