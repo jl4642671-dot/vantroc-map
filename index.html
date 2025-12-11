@@ -3,24 +3,70 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VanTroc Map</title>
+    <title>VanTroc Map - Carte des Annonces</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body{margin:0;padding:0;}
         #map{width:100%;height:100vh;}
+        .popup-content h3 {margin:0 0 10px 0;color:#667eea;}
+        .popup-content p {margin:5px 0;}
+        .popup-content .price {font-size:18px;font-weight:bold;color:#764ba2;}
     </style>
 </head>
 <body>
     <div id="map"></div>
     <script>
-        const map=L.map('map').setView([46.603354,1.888334],6);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
-        const listings=[{lat:48.8566,lng:2.3522,title:'Offre Paris',cat:'offer'},{lat:43.2965,lng:5.3698,title:'Demande Marseille',cat:'request'},{lat:45.7640,lng:4.8357,title:'Offre Lyon',cat:'offer'}];
-        listings.forEach(l=>{
-            const color=l.cat==='offer'?'green':'orange';
-            L.circleMarker([l.lat,l.lng],{radius:8,fillColor:color,color:'#fff',weight:2,opacity:1,fillOpacity:0.8}).addTo(map).bindPopup('<b>'+l.title+'</b>');
-        });
+        // Initialiser la carte centrée sur la France
+        const map = L.map('map').setView([46.603354, 2.888334], 6);
+        
+        // Ajouter la couche OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Récupérer les annonces depuis l'API Xano
+        fetch('https://x8ki-letl-twmt.n7.xano.io/api:eRvwNQ3D/listing')
+            .then(response => response.json())
+            .then(listings => {
+                console.log('Annonces récupérées:', listings);
+                
+                // Ajouter un marqueur pour chaque annonce
+                listings.forEach(listing => {
+                    // Utiliser les coordonnées si disponibles, sinon coordonnées par défaut (Paris)
+                    const lat = listing.latitude || 48.8566;
+                    const lng = listing.longitude || 2.3522;
+                    
+                    // Créer un marqueur personnalisé
+                    const marker = L.marker([lat, lng]).addTo(map);
+                    
+                    // Créer le contenu du popup
+                    const popupContent = `
+                        <div class="popup-content">
+                            <h3>${listing.title || 'Sans titre'}</h3>
+                            <p><strong>Type:</strong> ${listing.type || 'Non spécifié'}</p>
+                            <p><strong>Description:</strong> ${(listing.description || 'Pas de description').substring(0, 100)}...</p>
+                            <p class="price">💵 Prix: ${listing.price_per_night || 'N/A'}€/nuit</p>
+                            <p><strong>Couchages:</strong> ${listing.beds || 'N/A'} personnes</p>
+                        </div>
+                    `;
+                    
+                    // Attacher le popup au marqueur
+                    marker.bindPopup(popupContent);
+                });
+                
+                // Message si aucune annonce
+                if (listings.length === 0) {
+                    alert('🔍 Aucune annonce trouvée pour le moment.\nUtilisez le formulaire de création pour ajouter des annonces!');
+                } else {
+                    console.log(`✅ ${listings.length} annonce(s) affichée(s) sur la carte`);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des annonces:', error);
+                alert('❌ Erreur lors du chargement des annonces.\nLa carte s\'affiche mais sans annonces.');
+            });
     </script>
 </body>
 </html>
