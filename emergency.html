@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🆘 Urgence - VanTroc</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff0000 0%, #8b0000 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .navbar {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem 2rem;
+            backdrop-filter: blur(10px);
+        }
+        .navbar h1 {
+            color: white;
+            font-size: 1.8rem;
+        }
+        .emergency-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .alert-banner {
+            background: rgba(255,255,255,0.95);
+            color: #ff0000;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .alert-banner h2 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .alert-banner p {
+            font-size: 1.2rem;
+            color: #333;
+        }
+        .sos-button {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            border: 10px solid white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 100px rgba(255,0,0,0.5);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 2rem auto;
+            transition: all 0.3s;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 49% { opacity: 1; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 100px rgba(255,0,0,0.8); }
+            50%, 100% { opacity: 0.7; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 50px rgba(255,0,0,0.3); }
+        }
+        .sos-button:hover {
+            transform: scale(1.1);
+        }
+        .sos-button:active {
+            transform: scale(0.95);
+        }
+        .sos-button .sos-text {
+            font-size: 4rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+        .sos-button .sos-subtitle {
+            font-size: 1.2rem;
+            color: white;
+            margin-top: 0.5rem;
+        }
+        .emergency-form {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem auto;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .emergency-form h3 {
+            color: #ff0000;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .emergency-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .emergency-type {
+            padding: 1rem;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            background: white;
+        }
+        .emergency-type:hover {
+            border-color: #ff6666;
+            background: #fff5f5;
+        }
+        .emergency-type.selected {
+            border-color: #ff0000;
+            background: #ffebee;
+        }
+        .emergency-type .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .emergency-type .label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .emergency-numbers {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem auto;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .emergency-numbers h3 {
+            color: #ff0000;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .number-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .number-item {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .number-item .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff0000;
+            margin-bottom: 0.5rem;
+        }
+        .number-item .description {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 15px;
+            margin: 2rem auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .status-message {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem auto;
+            max-width: 600px;
+            text-align: center;
+            display: none;
+        }
+        .status-message.success {
+            border: 3px solid #4CAF50;
+            color: #4CAF50;
+        }
+        .status-message.error {
+            border: 3px solid #ff0000;
+            color: #ff0000;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Animation pour le marqueur clignotant */
+        @keyframes marker-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .leaflet-marker-icon.emergency-marker {
+            animation: marker-blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🆘 URGENCE - VanTroc</h1>
+    </nav>
+
+    <div class="emergency-container">
+        <div class="alert-banner">
+            <h2>🚨 SIGNAL D'URGENCE 🚨</h2>
+            <p>Utilisez cette page uniquement en cas d'urgence réelle</p>
+        </div>
+
+        <button class="sos-button" id="sosButton">
+            <div class="sos-text">SOS</div>
+            <div class="sos-subtitle">Appuyez ici</div>
+        </button>
+
+        <div class="emergency-form" id="emergencyForm" style="display: none;">
+            <h3>📍 Détails de l'urgence</h3>
+            
+            <div class="form-group">
+                <label>Type d'urgence :</label>
+                <div class="emergency-types">
+                    <div class="emergency-type" data-type="medical">
+                        <div class="icon">🚑</div>
+                        <div class="label">Urgence médicale</div>
+                    </div>
+                    <div class="emergency-type" data-type="health">
+                        <div class="icon">🩹</div>
+                        <div class="label">Problème de santé</div>
+                    </div>
+                    <div class="emergency-type" data-type="breakdown">
+                        <div class="icon">🔧</div>
+                        <div class="label">Panne mécanique</div>
+                    </div>
+                    <div class="emergency-type" data-type="accident">
+                        <div class="icon">⚠️</div>
+                        <div class="label">Accident</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Message (optionnel) :</label>
+                <textarea id="emergencyMessage" placeholder="Décrivez brièvement la situation..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <button class="sos-button" id="sendEmergency" style="width: 100%; height: 80px; border-radius: 10px; font-size: 1.5rem;">
+                    <div style="font-size: 1.5rem;">📡 ENVOYER L'ALERTE</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem; font-size: 1.2rem;">Envoi de l'alerte en cours...</p>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <div class="emergency-numbers">
+            <h3>📞 Numéros d'urgence</h3>
+            <div class="number-list">
+                <div class="number-item">
+                    <div class="number">112</div>
+                    <div class="description">Urgences européennes</div>
+                </div>
+                <div class="number-item">
+                    <div class="number">15</div>
+                    <div class="description">SAMU</div>
+                </div>
+                <div class="number-item">
+                    <div class="number">17</div>
+                    <div class="description">Police</div>
+                </div>
+                <div class="number-item">
+                    <div class="number">18</div>
+                    <div class="description">Pompiers</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script>
+        let map;
+        let userMarker;
+        let selectedType = '';
+        let userLocation = { lat: null, lng: null };
+
+        // Initialiser la carte
+        function initMap() {
+            map = L.map('map').setView([46.603354, 1.888334], 6);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Charger les urgences actives
+            loadEmergencies();
+        }
+
+        // Bouton SOS principal
+        document.getElementById('sosButton').addEventListener('click', function() {
+            document.getElementById('emergencyForm').style.display = 'block';
+            this.style.display = 'none';
+            getUserLocation();
+        });
+
+        // Sélection du type d'urgence
+        document.querySelectorAll('.emergency-type').forEach(type => {
+            type.addEventListener('click', function() {
+                document.querySelectorAll('.emergency-type').forEach(t => t.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedType = this.dataset.type;
+            });
+        });
+
+        // Obtenir la géolocalisation
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        userLocation.lat = position.coords.latitude;
+                        userLocation.lng = position.coords.longitude;
+                        
+                        // Centrer la carte sur l'utilisateur
+                        map.setView([userLocation.lat, userLocation.lng], 13);
+                        
+                        // Ajouter un marqueur temporaire
+                        if (userMarker) {
+                            map.removeLayer(userMarker);
+                        }
+                        
+                        userMarker = L.marker([userLocation.lat, userLocation.lng], {
+                            icon: L.divIcon({
+                                className: 'emergency-marker',
+                                html: '<div style="background: red; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px red;"></div>',
+                                iconSize: [30, 30]
+                            })
+                        }).addTo(map);
+                        
+                        // Ajouter un cercle de proximité
+                        L.circle([userLocation.lat, userLocation.lng], {
+                            color: 'red',
+                            fillColor: '#ff0000',
+                            fillOpacity: 0.2,
+                            radius: 500
+                        }).addTo(map);
+                    },
+                    function(error) {
+                        alert('Impossible d\'obtenir votre position. Vérifiez vos paramètres de géolocalisation.');
+                    }
+                );
+            } else {
+                alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+            }
+        }
+
+        // Envoyer l'alerte d'urgence
+        document.getElementById('sendEmergency').addEventListener('click', function() {
+            if (!selectedType) {
+                alert('Veuillez sélectionner un type d\'urgence !');
+                return;
+            }
+
+            if (!userLocation.lat || !userLocation.lng) {
+                alert('Position GPS non disponible. Veuillez réessayer.');
+                getUserLocation();
+                return;
+            }
+
+            const message = document.getElementById('emergencyMessage').value;
+            const username = localStorage.getItem('username') || 'Utilisateur';
+
+            // Afficher le loader
+            document.getElementById('emergencyForm').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            // Envoyer les données à Xano
+            sendEmergencyToXano({
+                username: username,
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+                emergency_type: selectedType,
+                message: message,
+                status: 'active',
+                created_at: new Date().toISOString()
+            });
+        });
+
+        // Envoyer l'urgence à Xano
+        function sendEmergencyToXano(emergencyData) {
+            const xanoUrl = 'https://x8ki-letl-twmt.n7.xano.io/api:8kzKdN5Q/emergency';
+
+            fetch(xanoUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(emergencyData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                
+                // Afficher le message de succès
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.className = 'status-message success';
+                statusMessage.textContent = '✅ ALERTE ENVOYÉE ! Votre position a été signalée aux autres utilisateurs.';
+                statusMessage.style.display = 'block';
+
+                // Ajouter le marqueur clignotant sur la carte
+                addEmergencyMarker(emergencyData);
+
+                // Réinitialiser après 5 secondes
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                document.getElementById('loading').style.display = 'none';
+                
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.className = 'status-message error';
+                statusMessage.textContent = '❌ Erreur lors de l\'envoi. Veuillez appeler directement les secours : 112';
+                statusMessage.style.display = 'block';
+            });
+        }
+
+        // Ajouter un marqueur d'urgence sur la carte
+        function addEmergencyMarker(emergency) {
+            const emergencyIcon = L.divIcon({
+                className: 'emergency-marker',
+                html: `
+                    <div style="
+                        background: red;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 5px solid white;
+                        box-shadow: 0 0 30px red;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                        animation: marker-blink 1s infinite;
+                    ">🆘</div>
+                `,
+                iconSize: [40, 40]
+            });
+
+            const marker = L.marker([emergency.latitude, emergency.longitude], {
+                icon: emergencyIcon
+            }).addTo(map);
+
+            const typeLabels = {
+                'medical': '🚑 Urgence médicale',
+                'health': '🩹 Problème de santé',
+                'breakdown': '🔧 Panne mécanique',
+                'accident': '⚠️ Accident'
+            };
+
+            const popupContent = `
+                <div style="text-align: center; min-width: 200px;">
+                    <h3 style="color: #ff0000; margin-bottom: 10px;">🆘 URGENCE</h3>
+                    <p><strong>${typeLabels[emergency.emergency_type]}</strong></p>
+                    <p><strong>Utilisateur:</strong> ${emergency.username}</p>
+                    ${emergency.message ? `<p><strong>Message:</strong> ${emergency.message}</p>` : ''}
+                    <p><strong>Heure:</strong> ${new Date(emergency.created_at).toLocaleTimeString('fr-FR')}</p>
+                    <a href="tel:112" style="
+                        display: block;
+                        background: #ff0000;
+                        color: white;
+                        padding: 10px;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        margin-top: 10px;
+                        font-weight: bold;
+                    ">📞 Appeler le 112</a>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent).openPopup();
+
+            // Ajouter un cercle de proximité
+            L.circle([emergency.latitude, emergency.longitude], {
+                color: 'red',
+                fillColor: '#ff0000',
+                fillOpacity: 0.2,
+                radius: 1000
+            }).addTo(map);
+        }
+
+        // Charger les urgences actives depuis Xano
+        function loadEmergencies() {
+            const xanoUrl = 'https://x8ki-letl-twmt.n7.xano.io/api:8kzKdN5Q/emergency';
+
+            fetch(xanoUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(emergency => {
+                            if (emergency.status === 'active') {
+                                addEmergencyMarker(emergency);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des urgences:', error);
+                });
+        }
+
+        // Initialiser la carte au chargement
+        window.addEventListener('load', function() {
+            initMap();
+        });
+
+        // Rafraîchir les urgences toutes les 30 secondes
+        setInterval(function() {
+            loadEmergencies();
+        }, 30000);
+    </script>
+</body>
+</html>
