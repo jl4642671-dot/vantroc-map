@@ -263,12 +263,35 @@
                 available_from: formData.get('availableFrom'),
                 available_to: formData.get('availableTo')
             };
-            
-            console.log('Listing Data:', listingData);
-            alert('✅ Annonce créée avec succès!\n\nTitre: ' + listingData.title);
-            
-            // Ici, on pourra connecter à l'API Xano
-            // fetch('https://x8ki-letl-twmt.n7.xano.io/api:...', { ... })
+            // Envoyer les données à l'API Xano
+            fetch('https://x8ki-letl-twmt.n7.xano.io/api:eRvwNQ3D/listing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: 1, // À remplacer par l'ID de l'utilisateur connecté
+                    type: listingData.vehicle_type,
+                    category: listingData.vehicle_type,
+                    title: listingData.title,
+                    description: listingData.description,
+                    latitude: 0, // À ajouter plus tard avec géolocalisation
+                    longitude: 0, // À ajouter plus tard avec géolocalisation
+                    radius_km: 50,
+                    is_active: true
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Annonce créée:', data);
+                alert('✅ Annonce créée avec succès!\n\nTitre: ' + listingData.title + '\n\nVotre annonce a été enregistrée dans la base de données!');
+                // Optionnel: rediriger vers la page des annonces
+                // window.location.href = '/listings';
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('❌ Erreur lors de la création de l\'annonce. Veuillez réessayer.');
+            });
         });
         
         // Afficher les noms des fichiers sélectionnés
